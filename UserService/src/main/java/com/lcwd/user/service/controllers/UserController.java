@@ -2,8 +2,6 @@ package com.lcwd.user.service.controllers;
 
 import com.lcwd.user.service.entities.User;
 import com.lcwd.user.service.services.UserService;
-
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
