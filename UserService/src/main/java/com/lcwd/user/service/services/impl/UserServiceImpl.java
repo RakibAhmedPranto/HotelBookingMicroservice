@@ -1,13 +1,16 @@
 package com.lcwd.user.service.services.impl;
 
+import com.lcwd.user.service.entities.Hotel;
 import com.lcwd.user.service.entities.Rating;
 import com.lcwd.user.service.entities.User;
 import com.lcwd.user.service.exceptions.ResourceNotFoundException;
 import com.lcwd.user.service.repositories.UserRepository;
 import com.lcwd.user.service.services.UserService;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -46,16 +49,27 @@ public class UserServiceImpl implements UserService {
     public User getUser(String userId) {
         //get user from database with the help  of user repository
 
-        webClientBuilder.get()
+        List<Rating> ratings = webClientBuilder.get()
             .uri("localhost:8080/ratings/users/" + userId)
             .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .retrieve()
-            .bodyToMono(Rating.class)
+            .bodyToMono(new ParameterizedTypeReference<List<Rating>>() {
+            })
             .block();
 
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User with given id is not found on server !! : " + userId));
 
-
+        List<Rating> ratingList = ratings.stream().map(rating -> {
+            Hotel hotel = webClientBuilder.get()
+                .uri("localhost:8081/hotels/" + rating.getHotelId())
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .retrieve()
+                .bodyToMono(Hotel.class)
+                .block();
+            rating.setHotel(hotel);
+            return rating;
+        }).toList();
+        user.setRatings(ratingList);
         return user;
     }
 }
